@@ -3,7 +3,7 @@ version: "2.0"
 
 services:
   backend:
-    image: ecotrack/backend:latest
+    image: h4riharan/ecotracker-backend:latest
     expose:
       - port: 8000
         as: 8000
@@ -14,7 +14,7 @@ services:
       - DB_PATH=/root/data/ecotracker.db
 
   frontend:
-    image: ecotrack/frontend:latest
+    image: h4riharan/ecotracker-frontend:latest
     expose:
       - port: 3000
         as: 80
