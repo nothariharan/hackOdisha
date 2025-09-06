@@ -1,0 +1,7 @@
+﻿*.db
+*.log
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore

@@ -1,0 +1,69 @@
+﻿---
+version: "2.0"
+
+services:
+  backend:
+    image: ecotrack/backend:latest
+    expose:
+      - port: 8000
+        as: 8000
+        to:
+          - global: true
+    env:
+      - PORT=8000
+      - DB_PATH=/root/data/ecotracker.db
+
+  frontend:
+    image: ecotrack/frontend:latest
+    expose:
+      - port: 3000
+        as: 80
+        to:
+          - global: true
+    env:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+
+profiles:
+  compute:
+    backend:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 1Gi
+        storage:
+          size: 5Gi
+    frontend:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          size: 1Gi
+  placement:
+    dcloud:
+      attributes:
+        host: akash
+      signedBy:
+        anyOf:
+          - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
+      pricing:
+        backend:
+          denom: uakt
+          amount: 1000
+        frontend:
+          denom: uakt
+          amount: 1000
+
+deployment:
+  backend:
+    dcloud:
+      profile: backend
+      count: 1
+  frontend:
+    dcloud:
+      profile: frontend
+      count: 1
