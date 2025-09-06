@@ -133,7 +133,7 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
             🔄 Refresh
           </button>
           <button onClick={onLogout} className="btn-outline">
-            Logout
+            🚪 Logout
           </button>
         </div>
       </div>
@@ -157,18 +157,18 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
         {/* Stats Grid */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-title">Total Points</div>
-            <div className="stat-value">{totalPoints}</div>
+            <div className="stat-title">🌟 Total Points</div>
+            <div className="stat-value" style={{ color: '#059669' }}>{totalPoints}</div>
             <div className="stat-description">Eco points earned</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Challenges</div>
-            <div className="stat-value">{challenges.filter(c => c.earned).length}/{challenges.length}</div>
+            <div className="stat-title">🏆 Challenges</div>
+            <div className="stat-value" style={{ color: '#d97706' }}>{challenges.filter(c => c.earned).length}/{challenges.length}</div>
             <div className="stat-description">Completed challenges</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Purchases</div>
-            <div className="stat-value">{latestPurchases.length}</div>
+            <div className="stat-title">🛍️ Purchases</div>
+            <div className="stat-value" style={{ color: '#7c3aed' }}>{latestPurchases.length}</div>
             <div className="stat-description">Eco-friendly purchases</div>
           </div>
         </div>
@@ -178,9 +178,9 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           {/* Challenges */}
           <Card className="card">
             <CardHeader className="card-header">
-              <CardTitle className="card-title"> Eco Challenges</CardTitle>
+              <CardTitle className="card-title">🎯 Eco Challenges</CardTitle>
               <CardDescription className="card-description">
-                Complete challenges to earn more points
+                Complete challenges to earn more points and rewards
               </CardDescription>
             </CardHeader>
             <CardContent className="card-content">
@@ -276,7 +276,7 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           {/* Latest Purchases */}
           <Card className="card" style={{ gridColumn: 'span 2' }}>
             <CardHeader className="card-header">
-              <CardTitle className="card-title"> Latest Purchases</CardTitle>
+              <CardTitle className="card-title">🛒 Latest Purchases</CardTitle>
               <CardDescription className="card-description">
                 Your recent eco-friendly purchases
               </CardDescription>
@@ -284,7 +284,7 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
             <CardContent className="card-content">
               {latestPurchases.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon"></div>
+                  <div className="empty-icon" style={{ fontSize: '48px' }}>🛍️</div>
                   <div className="empty-title">No purchases so far</div>
                   <div className="empty-description">
                     Start shopping at eco-friendly stores to see your purchases here
@@ -306,8 +306,8 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb'
                     }}>
-                      <div style={{ fontWeight: '600', marginBottom: '8px' }}>
-                        Purchase #{purchase.id}
+                      <div style={{ fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        🧾 Purchase #{purchase.id}
                       </div>
                       <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
                         {new Date(purchase.created_at).toLocaleDateString()}
@@ -316,7 +316,7 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
                         ${purchase.total_amount.toFixed(2)}
                       </div>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-                        +{purchase.points_earned} points earned
+                        ⭐ +{purchase.points_earned} points earned
                       </div>
                       <button 
                         onClick={() => handleDeleteReceipt(purchase.id)}

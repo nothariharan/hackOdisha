@@ -269,7 +269,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           <span style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937' }}>EcoTrack</span>
         </div>
         <button onClick={onLogout} className="btn-outline">
-          Logout
+          🚪 Logout
         </button>
       </div>
 
@@ -307,18 +307,18 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
         {/* Stats Grid */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-title">Total Items</div>
-            <div className="stat-value">{currentShopItems?.length || 0}</div>
+            <div className="stat-title">📦 Total Items</div>
+            <div className="stat-value" style={{ color: '#0ea5e9' }}>{currentShopItems?.length || 0}</div>
             <div className="stat-description">Products in your inventory</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Receipts Issued</div>
-            <div className="stat-value">{shopReceipts?.length || 0}</div>
+            <div className="stat-title">🧾 Receipts Issued</div>
+            <div className="stat-value" style={{ color: '#059669' }}>{shopReceipts?.length || 0}</div>
             <div className="stat-description">Eco-friendly receipts sent</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Points Awarded</div>
-            <div className="stat-value">{totalPointsAwarded || 0}</div>
+            <div className="stat-title">⭐ Points Awarded</div>
+            <div className="stat-value" style={{ color: '#d97706' }}>{totalPointsAwarded || 0}</div>
             <div className="stat-description">Total points given to customers</div>
           </div>
         </div>
@@ -330,7 +330,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
             <CardHeader className="card-header">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <CardTitle className="card-title"> Shop Items</CardTitle>
+                  <CardTitle className="card-title">🏪 Shop Items</CardTitle>
                   <CardDescription className="card-description">
                     Your available products for customers
                   </CardDescription>
@@ -339,7 +339,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                   onClick={() => setShowAddItemForm(!showAddItemForm)}
                   className="btn-outline"
                 >
-                  {showAddItemForm ? 'Cancel' : '+ Add Item'}
+                  {showAddItemForm ? '❌ Cancel' : '➕ Add Item'}
                 </button>
               </div>
             </CardHeader>
@@ -467,7 +467,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           {/* Issue Receipt */}
           <Card className="card">
             <CardHeader className="card-header">
-              <CardTitle className="card-title"> Issue Receipt</CardTitle>
+              <CardTitle className="card-title">🧾 Issue Receipt</CardTitle>
               <CardDescription className="card-description">
                 Create eco-friendly receipts for customers
               </CardDescription>
@@ -494,7 +494,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                       borderRadius: '6px',
                       fontSize: '14px'
                     }}>
-                      ✅ Customer: <strong>{validatedCustomer.name}</strong> | Eco Score: <strong>{validatedCustomer.points}</strong> points
+                      ✅ Customer: <strong>{validatedCustomer.name}</strong> | 🌟 Eco Score: <strong>{validatedCustomer.points}</strong> points
                       {validatedCustomer.points >= 100 && (
                         <div style={{ color: '#16a34a', fontWeight: '600', marginTop: '4px' }}>
                           🌱 Eligible for {Math.min(validatedCustomer.points / 50, 50).toFixed(1)}% eco discount!
@@ -578,7 +578,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                   className="btn-primary"
                   style={{ width: '100%' }}
                 >
-                  Issue Receipt
+                  🚀 Issue Receipt
                 </button>
               </div>
             </CardContent>
@@ -593,7 +593,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           <div className="modal-content" style={{ maxWidth: '500px' }}>
             <div className="header">
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
-                 Eco-Friendly Receipt
+                🧾 Eco-Friendly Receipt
               </h2>
             </div>
             <div className="content">
@@ -675,7 +675,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                 </div>
               </div>
               <button onClick={closeReceipt} className="btn-primary" style={{ width: '100%', marginTop: '16px' }}>
-                Close
+                ✅ Close
               </button>
             </div>
           </div>
