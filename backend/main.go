@@ -82,7 +82,15 @@ case path == "/api/shops/login" && method == "POST":
 shopHandler.Login(w, r)
 
 case strings.HasPrefix(path, "/api/shops/") && method == "GET":
+// Check if it's items
+if strings.Contains(path, "/items") {
+shopHandler.GetItems(w, r)
+} else {
 shopHandler.GetShop(w, r)
+}
+
+case strings.HasPrefix(path, "/api/shops/") && method == "POST" && strings.Contains(path, "/items"):
+shopHandler.AddItem(w, r)
 
 case path == "/api/receipts" && method == "POST":
 receiptHandler.CreateReceipt(w, r)

@@ -86,16 +86,32 @@ export function AuthModal({ onClose }: AuthModalProps) {
         const email = formData.get('email') as string
         const password = formData.get('password') as string
         const name = formData.get('name') as string
-        const phone = formData.get('phone') as string
         
-        if (!email || !password || !name || !phone) {
+        // For shop owners, we don't require phone field
+        const phone = userType === "customer" ? formData.get('phone') as string : "0000000000"
+        
+        if (!email || !password || !name || (userType === "customer" && !phone)) {
           setError("Please fill in all fields")
           return
         }
 
-        const user = await ApiService.registerUser({ email, password, name, phone })
-        const shopItems = userType === "shop-owner" ? parseProductList(productList) : undefined
-        onClose(userType, shopItems, user)
+        if (userType === "customer") {
+          // Customer registration
+          const user = await ApiService.registerUser({ email, password, name, phone })
+          onClose(userType, undefined, user)
+        } else {
+          // Shop owner registration with items
+          const shopItems = parseProductList(productList)
+          const user = await ApiService.registerShop({ 
+            email, 
+            password, 
+            name, 
+            address: "Default Address", 
+            phone, 
+            description: "Eco-friendly shop" 
+          }, shopItems)
+          onClose(userType, shopItems, user)
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")

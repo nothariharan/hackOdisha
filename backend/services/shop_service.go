@@ -41,17 +41,33 @@ if err != nil {
 return nil, err
 }
 
-// Return the created shop
 shop := &models.Shop{
 ID:          int(id),
 Email:       req.Email,
-Password:    req.Password,
 Name:        req.Name,
 Address:     req.Address,
 Phone:       req.Phone,
 Description: req.Description,
 CreatedAt:   time.Now(),
 UpdatedAt:   time.Now(),
+}
+
+return shop, nil
+}
+
+func (s *ShopService) RegisterWithItems(req models.ShopRegistration, items []models.ShopItem) (*models.Shop, error) {
+// First register the shop
+shop, err := s.Register(req)
+if err != nil {
+return nil, err
+}
+
+// Then add items
+for _, item := range items {
+_, err := s.AddItem(shop.ID, item)
+if err != nil {
+return nil, err
+}
 }
 
 return shop, nil
@@ -95,6 +111,17 @@ return shop, nil
 }
 
 func (s *ShopService) AddItem(shopID int, item models.ShopItem) (*models.ShopItem, error) {
+// Set defaults for missing fields
+if item.Description == "" {
+item.Description = item.Category + " product"
+}
+
+// Determine eco-friendly status based on category if not set
+if !item.IsEcoFriendly {
+item.IsEcoFriendly = item.Category == "Organic" || item.Category == "Eco-Friendly" || 
+item.Category == "Fruits" || item.Category == "Vegetables"
+}
+
 // Insert new item
 result, err := s.db.DB.Exec(`
 INSERT INTO shop_items (shop_id, name, price, category, description, is_eco_friendly) 

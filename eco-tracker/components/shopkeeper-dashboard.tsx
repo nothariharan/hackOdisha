@@ -5,16 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { type User } from "@/lib/api"
-
-interface ShopItem {
-  id: number
-  name: string
-  price: number
-  category: string
-}
+import { type User, type ShopItem, ApiService } from "@/lib/api"
 
 interface ShopkeeperDashboardProps {
   onLogout: () => void
@@ -27,8 +20,61 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
   const [selectedItems, setSelectedItems] = useState<{ [key: number]: number }>({})
   const [showReceipt, setShowReceipt] = useState(false)
   const [receiptData, setReceiptData] = useState<any>(null)
+  const [currentShopItems, setCurrentShopItems] = useState<ShopItem[]>(shopItems || [])
+  const [showAddItemForm, setShowAddItemForm] = useState(false)
+  const [newItem, setNewItem] = useState({ name: "", price: "", category: "" })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const shopName = user?.name || "Your Shop"
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchShopItems()
+    }
+  }, [user?.id])
+
+  const fetchShopItems = async () => {
+    if (!user?.id) return
+    
+    try {
+      const items = await ApiService.getShopItems(user.id)
+      setCurrentShopItems(items || [])
+    } catch (error) {
+      console.error('Error fetching shop items:', error)
+      setCurrentShopItems([])
+    }
+  }
+
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user?.id || !newItem.name || !newItem.price || !newItem.category) return
+
+    try {
+      setIsLoading(true)
+      setError("")
+      const item: ShopItem = {
+        id: 0, // Will be set by backend
+        name: newItem.name,
+        price: parseFloat(newItem.price),
+        category: newItem.category
+      }
+
+      await ApiService.addShopItem(user.id, item)
+      
+      // Reset form
+      setNewItem({ name: "", price: "", category: "" })
+      setShowAddItemForm(false)
+      
+      // Refresh items list
+      await fetchShopItems()
+    } catch (error) {
+      console.error('Error adding item:', error)
+      setError("Failed to add item. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleItemQuantityChange = (itemId: number, quantity: number) => {
     if (quantity < 0) return
@@ -40,38 +86,72 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
 
   const calculateTotal = () => {
     return Object.entries(selectedItems).reduce((total, [itemId, quantity]) => {
-      const item = shopItems.find(i => i.id === parseInt(itemId))
+      const item = currentShopItems.find(i => i.id === parseInt(itemId))
       return total + (item ? item.price * quantity : 0)
     }, 0)
   }
 
-  const handleIssueReceipt = () => {
-    if (!customerIdentifier.trim() || shopItems.length === 0) return
+  const handleIssueReceipt = async () => {
+    setError("")
+    
+    // Validation checks
+    if (!customerIdentifier.trim()) {
+      setError("Please enter a customer identifier")
+      return
+    }
+    
+    if (!currentShopItems || currentShopItems.length === 0) {
+      setError("No items available in your shop. Please add items first.")
+      return
+    }
 
     const purchasedItems = Object.entries(selectedItems)
       .filter(([_, quantity]) => quantity > 0)
       .map(([itemId, quantity]) => {
-        const item = shopItems.find(i => i.id === parseInt(itemId))
+        const item = currentShopItems.find(i => i.id === parseInt(itemId))
         return item ? { ...item, quantity } : null
       })
       .filter(Boolean)
 
-    if (purchasedItems.length === 0) return
+    if (purchasedItems.length === 0) {
+      setError("Please select at least one item to issue a receipt")
+      return
+    }
 
     const total = calculateTotal()
     const pointsEarned = Math.floor(total * 2) // 2 points per dollar
 
-    setReceiptData({
-      customerIdentifier,
-      items: purchasedItems,
-      total,
-      pointsEarned,
-      timestamp: new Date().toLocaleString()
-    })
+    try {
+      // Create receipt in database
+      const receiptData = {
+        customer_identifier: customerIdentifier,
+        shop_id: user?.id,
+        items: purchasedItems,
+        total_amount: total,
+        points_earned: pointsEarned
+      }
 
-    setShowReceipt(true)
-    setSelectedItems({})
-    setCustomerIdentifier("")
+      // For now, we'll show the receipt popup
+      // In a real app, you'd save this to the database
+      setReceiptData({
+        customerIdentifier,
+        items: purchasedItems,
+        total,
+        pointsEarned,
+        timestamp: new Date().toLocaleString()
+      })
+
+      setShowReceipt(true)
+      setSelectedItems({})
+      setCustomerIdentifier("")
+      
+      // Show success message
+      setError("")
+      
+    } catch (error) {
+      console.error('Error creating receipt:', error)
+      setError("Failed to create receipt. Please try again.")
+    }
   }
 
   const closeReceipt = () => {
@@ -114,11 +194,26 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           <p className="dashboard-subtitle">Manage your shop and issue eco-friendly receipts</p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div style={{ 
+            backgroundColor: '#fef2f2', 
+            border: '1px solid #fecaca', 
+            color: '#dc2626',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-title">Total Items</div>
-            <div className="stat-value">{shopItems.length}</div>
+            <div className="stat-value">{currentShopItems?.length || 0}</div>
             <div className="stat-description">Products in your inventory</div>
           </div>
           <div className="stat-card">
@@ -138,13 +233,92 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           {/* Shop Items */}
           <Card className="card">
             <CardHeader className="card-header">
-              <CardTitle className="card-title"> Shop Items</CardTitle>
-              <CardDescription className="card-description">
-                Your available products for customers
-              </CardDescription>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <CardTitle className="card-title"> Shop Items</CardTitle>
+                  <CardDescription className="card-description">
+                    Your available products for customers
+                  </CardDescription>
+                </div>
+                <button 
+                  onClick={() => setShowAddItemForm(!showAddItemForm)}
+                  className="btn-outline"
+                  style={{ padding: '8px 16px', fontSize: '14px' }}
+                >
+                  {showAddItemForm ? 'Cancel' : '+ Add Item'}
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="card-content">
-              {shopItems.length === 0 ? (
+              {/* Add Item Form */}
+              {showAddItemForm && (
+                <form onSubmit={handleAddItem} style={{ 
+                  marginBottom: '16px', 
+                  padding: '16px', 
+                  backgroundColor: '#f9fafb', 
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <label className="label" htmlFor="item-name">Item Name</label>
+                      <input
+                        id="item-name"
+                        type="text"
+                        placeholder="Enter item name"
+                        className="input"
+                        value={newItem.name}
+                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label className="label" htmlFor="item-price">Price ($)</label>
+                        <input
+                          id="item-price"
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="input"
+                          value={newItem.price}
+                          onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label className="label" htmlFor="item-category">Category</label>
+                        <select
+                          id="item-category"
+                          className="input"
+                          value={newItem.category}
+                          onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          <option value="Food">Food</option>
+                          <option value="Organic">Organic</option>
+                          <option value="Eco-Friendly">Eco-Friendly</option>
+                          <option value="Fruits">Fruits</option>
+                          <option value="Vegetables">Vegetables</option>
+                          <option value="General">General</option>
+                        </select>
+                      </div>
+                    </div>
+                    <button 
+                      type="submit" 
+                      className="btn-primary" 
+                      disabled={isLoading}
+                      style={{ width: '100%' }}
+                    >
+                      {isLoading ? 'Adding...' : 'Add Item'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Items List */}
+              {!currentShopItems || currentShopItems.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon"></div>
                   <div className="empty-title">Shop is empty</div>
@@ -154,7 +328,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {shopItems.map((item) => (
+                  {currentShopItems.map((item) => (
                     <div key={item.id} style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
@@ -229,7 +403,7 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                     {Object.entries(selectedItems)
                       .filter(([_, quantity]) => quantity > 0)
                       .map(([itemId, quantity]) => {
-                        const item = shopItems.find(i => i.id === parseInt(itemId))
+                        const item = currentShopItems.find(i => i.id === parseInt(itemId))
                         return item ? (
                           <div key={itemId} style={{ 
                             display: 'flex', 
@@ -258,7 +432,6 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                 <button
                   onClick={handleIssueReceipt}
                   className="btn-primary"
-                  disabled={!customerIdentifier.trim() || shopItems.length === 0}
                   style={{ width: '100%' }}
                 >
                   Issue Receipt

@@ -2,10 +2,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { type User } from "@/lib/api"
+import { type User, type Receipt, type Challenge, ApiService } from "@/lib/api"
 
 interface CustomerDashboardProps {
   onLogout: () => void
@@ -13,15 +14,92 @@ interface CustomerDashboardProps {
 }
 
 export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
-  const challenges = [
-    { name: "Eco-Friendly Shopping", earned: false, icon: "", description: "Buy 5 organic products" },
-    { name: "Fruit & Veggie Lover", earned: false, icon: "", description: "Purchase 10 fruits/vegetables" },
-    { name: "Sustainable Living", earned: false, icon: "", description: "Buy 3 eco-friendly items" },
-    { name: "Plastic Free Week", earned: false, icon: "", description: "Only purchased less than 5 plastic items" },
-  ]
+  const [totalPoints, setTotalPoints] = useState(0)
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [recentActivities, setRecentActivities] = useState<any[]>([])
+  const [latestPurchases, setLatestPurchases] = useState<Receipt[]>([])
+  const [showReceiptNotification, setShowReceiptNotification] = useState(false)
+  const [newReceipt, setNewReceipt] = useState<Receipt | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const totalPoints = user?.points || 0
-  const userName = user?.name || "Customer"
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserData()
+    }
+  }, [user?.id])
+
+  const fetchUserData = async () => {
+    if (!user?.id) return
+
+    try {
+      setIsLoading(true)
+      
+      // Fetch user receipts, challenges, and points
+      const [receipts, userChallenges, userData] = await Promise.all([
+        ApiService.getUserReceipts(user.id),
+        ApiService.getUserChallenges(user.id),
+        ApiService.getUser(user.id)
+      ])
+
+      // Update state
+      setLatestPurchases(receipts || [])
+      setChallenges(userChallenges || [])
+      setTotalPoints(userData?.points || 0)
+
+      // Check for new receipts (compare with localStorage)
+      const lastReceiptCount = localStorage.getItem(`lastReceiptCount_${user.id}`)
+      const currentReceiptCount = receipts?.length || 0
+      
+      if (lastReceiptCount && currentReceiptCount > parseInt(lastReceiptCount)) {
+        // New receipt received!
+        const newestReceipt = receipts[receipts.length - 1]
+        setNewReceipt(newestReceipt)
+        setShowReceiptNotification(true)
+      }
+
+      // Update localStorage
+      localStorage.setItem(`lastReceiptCount_${user.id}`, currentReceiptCount.toString())
+
+      // Generate recent activities based on receipts
+      const activities = receipts?.map(receipt => ({
+        id: receipt.id,
+        type: "purchase",
+        title: "Eco-friendly purchase completed",
+        description: `Earned ${receipt.points_earned} points`,
+        timestamp: receipt.created_at,
+        points: receipt.points_earned
+      })) || []
+
+      setRecentActivities(activities)
+
+    } catch (error) {
+      console.error('Error fetching user data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const closeReceiptNotification = () => {
+    setShowReceiptNotification(false)
+    setNewReceipt(null)
+  }
+
+  const getProgressPercentage = (progress: number, target: number) => {
+    return Math.min((progress / target) * 100, 100)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="dashboard">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '16px' }}></div>
+            <div>Loading your eco journey...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="dashboard">
@@ -57,13 +135,13 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           </h1>
           <div style={{
             height: '4px',
-            background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c)',
+            background: 'linear-gradient(90deg, #10b981, #059669, #047857, #065f46)',
             borderRadius: '2px',
-            margin: '0 auto 24px',
+            margin: '0 auto',
             width: '200px',
-            animation: 'pulse 2s ease-in-out infinite alternate'
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
           }}></div>
-          <p className="dashboard-subtitle">Welcome back, {userName}! Keep up the great work.</p>
+          <p className="dashboard-subtitle">Track your sustainable choices and earn rewards</p>
         </div>
 
         {/* Stats Grid */}
@@ -71,55 +149,73 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           <div className="stat-card">
             <div className="stat-title">Total Points</div>
             <div className="stat-value">{totalPoints}</div>
-            <div className="stat-description">Earned from eco-friendly purchases</div>
+            <div className="stat-description">Eco points earned</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Challenges Completed</div>
-            <div className="stat-value">{challenges.filter(c => c.earned).length}</div>
-            <div className="stat-description">Out of {challenges.length} challenges</div>
+            <div className="stat-title">Challenges</div>
+            <div className="stat-value">{challenges.filter(c => c.earned).length}/{challenges.length}</div>
+            <div className="stat-description">Completed challenges</div>
           </div>
           <div className="stat-card">
-            <div className="stat-title">Progress Towards Milestone</div>
-            <div className="stat-value">{Math.floor(totalPoints / 100)}%</div>
-            <div className="stat-description">Next milestone: {Math.ceil(totalPoints / 100) * 100} points</div>
+            <div className="stat-title">Purchases</div>
+            <div className="stat-value">{latestPurchases.length}</div>
+            <div className="stat-description">Eco-friendly purchases</div>
           </div>
         </div>
 
         {/* Main Content Grid */}
         <div className="cards-grid">
-          {/* Challenges Section */}
+          {/* Challenges */}
           <Card className="card">
             <CardHeader className="card-header">
               <CardTitle className="card-title"> Eco Challenges</CardTitle>
               <CardDescription className="card-description">
-                Complete challenges to earn more points and badges
+                Complete challenges to earn more points
               </CardDescription>
             </CardHeader>
             <CardContent className="card-content">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {challenges.map((challenge, index) => (
-                  <div key={index} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '12px',
-                    padding: '12px',
-                    backgroundColor: challenge.earned ? '#f0fdf4' : '#f9fafb',
-                    borderRadius: '8px',
-                    border: challenge.earned ? '2px solid #22c55e' : '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '24px' }}>{challenge.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '600', marginBottom: '4px' }}>{challenge.name}</div>
-                      <div style={{ fontSize: '14px', color: '#6b7280' }}>{challenge.description}</div>
-                    </div>
-                    {challenge.earned && (
-                      <Badge style={{ backgroundColor: '#22c55e', color: 'white' }}>
-                         Completed
-                      </Badge>
-                    )}
+              {challenges.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon"></div>
+                  <div className="empty-title">No challenges available</div>
+                  <div className="empty-description">
+                    Start making eco-friendly purchases to unlock challenges
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {challenges.map((challenge) => (
+                    <div key={challenge.id} style={{ 
+                      padding: '16px', 
+                      backgroundColor: challenge.earned ? '#f0fdf4' : '#f9fafb',
+                      borderRadius: '8px',
+                      border: challenge.earned ? '1px solid #10b981' : '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>{challenge.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                            {challenge.name}
+                            {challenge.earned && <Badge style={{ marginLeft: '8px', backgroundColor: '#10b981' }}>Completed</Badge>}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                            {challenge.description}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Progress 
+                          value={getProgressPercentage(challenge.progress, challenge.target)} 
+                          style={{ flex: 1, height: '8px' }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#6b7280', minWidth: '60px' }}>
+                          {challenge.progress}/{challenge.target}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -132,51 +228,154 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="card-content">
-              <div className="empty-state">
-                <div className="empty-icon"></div>
-                <div className="empty-title">No activities yet</div>
-                <div className="empty-description">
-                  Start shopping at eco-friendly stores to see your activities here
+              {recentActivities.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon"></div>
+                  <div className="empty-title">No activities yet</div>
+                  <div className="empty-description">
+                    Start shopping at eco-friendly stores to see your activities
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {recentActivities.slice(0, 5).map((activity) => (
+                    <div key={activity.id} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px',
+                      padding: '12px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ fontSize: '20px' }}></div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', marginBottom: '2px' }}>{activity.title}</div>
+                        <div style={{ fontSize: '14px', color: '#6b7280' }}>{activity.description}</div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        {new Date(activity.timestamp).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Latest Purchases */}
-          <Card className="card" style={{ gridColumn: '1 / -1' }}>
+          <Card className="card" style={{ gridColumn: 'span 2' }}>
             <CardHeader className="card-header">
               <CardTitle className="card-title"> Latest Purchases</CardTitle>
               <CardDescription className="card-description">
-                Your recent eco-friendly purchases and receipts
+                Your recent eco-friendly purchases
               </CardDescription>
             </CardHeader>
             <CardContent className="card-content">
-              <div style={{ 
-                display: 'flex', 
-                gap: '16px', 
-                overflowX: 'auto', 
-                padding: '16px 0',
-                scrollbarWidth: 'thin'
-              }}>
-                <div className="empty-state" style={{ minWidth: '300px', textAlign: 'center' }}>
+              {latestPurchases.length === 0 ? (
+                <div className="empty-state">
                   <div className="empty-icon"></div>
                   <div className="empty-title">No purchases so far</div>
                   <div className="empty-description">
-                    Visit eco-friendly shops and get receipts to see your purchases here
+                    Start shopping at eco-friendly stores to see your purchases here
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '16px', 
+                  overflowX: 'auto', 
+                  paddingBottom: '8px',
+                  scrollbarWidth: 'thin'
+                }}>
+                  {latestPurchases.map((purchase) => (
+                    <div key={purchase.id} style={{ 
+                      minWidth: '200px',
+                      padding: '16px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                        Purchase #{purchase.id}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                        {new Date(purchase.created_at).toLocaleDateString()}
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: '600', color: '#059669', marginBottom: '4px' }}>
+                        ${purchase.total_amount.toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        +{purchase.points_earned} points earned
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes pulse {
-          0% { opacity: 0.6; }
-          100% { opacity: 1; }
-        }
-      `}</style>
+      {/* Receipt Notification Modal */}
+      {showReceiptNotification && newReceipt && (
+        <div className="modal">
+          <div className="modal-backdrop" onClick={closeReceiptNotification} />
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div className="header">
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
+                 New Receipt Received!
+              </h2>
+            </div>
+            <div className="content">
+              <div style={{ 
+                backgroundColor: '#f0fdf4',
+                padding: '16px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}></div>
+                <div style={{ color: '#16a34a', fontWeight: '600', fontSize: '18px' }}>
+                  Receipt #{newReceipt.id} Received!
+                </div>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+                  Thank you for your eco-friendly purchase
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <strong>Purchase Amount:</strong> ${newReceipt.total_amount.toFixed(2)}
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <strong>Points Earned:</strong> {newReceipt.points_earned} 
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <strong>Date:</strong> {new Date(newReceipt.created_at).toLocaleString()}
+              </div>
+              
+              <div style={{ 
+                backgroundColor: '#fef3c7',
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}>
+                <div style={{ color: '#d97706', fontWeight: '600' }}>
+                   Your total points: {totalPoints + newReceipt.points_earned}
+                </div>
+                <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+                  Keep shopping eco-friendly to earn more rewards!
+                </div>
+              </div>
+              
+              <button onClick={closeReceiptNotification} className="btn-primary" style={{ width: '100%' }}>
+                Awesome! Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
