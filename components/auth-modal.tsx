@@ -63,145 +63,198 @@ export function AuthModal({ onClose }: AuthModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 animate-fade-in overflow-y-auto">
+    <div className="modal">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 backdrop-blur-sm" />
+      <div className="modal-backdrop" />
 
       {/* Modal */}
-      <Card className="relative w-full max-w-md glass shadow-2xl border-0 my-8 min-h-fit">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center p-2">
+      <div className="modal-content">
+        <div className="header">
+          <div className="logo-container">
             <Image
               src="/logo.png"
               alt="EcoTrack Logo"
               width={48}
               height={48}
-              className="rounded-full"
+              style={{ borderRadius: '50%' }}
             />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-balance">Welcome to EcoTrack</CardTitle>
-            <CardDescription className="text-muted-foreground">Track your sustainability journey</CardDescription>
+            <h1 className="title">Welcome to EcoTrack</h1>
+            <p className="subtitle">Track your sustainability journey</p>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
+        <div className="content">
           {/* Role Selection */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant={userType === "customer" ? "default" : "outline"}
+          <div className="role-grid">
+            <button
+              className={`role-btn ${userType === "customer" ? "active" : ""}`}
               onClick={() => setUserType("customer")}
-              className="h-auto p-4 flex flex-col gap-2"
             >
-              <span className="text-xl">👤</span>
-              <span className="text-sm">Customer</span>
-            </Button>
-            <Button
-              variant={userType === "shop-owner" ? "default" : "outline"}
+              <span style={{ fontSize: '20px' }}>👤</span>
+              <span style={{ fontSize: '14px' }}>Customer</span>
+            </button>
+            <button
+              className={`role-btn ${userType === "shop-owner" ? "active" : ""}`}
               onClick={() => setUserType("shop-owner")}
-              className="h-auto p-4 flex flex-col gap-2"
             >
-              <span className="text-xl">🏪</span>
-              <span className="text-sm">Shop Owner</span>
-            </Button>
+              <span style={{ fontSize: '20px' }}>🏪</span>
+              <span style={{ fontSize: '14px' }}>Shop Owner</span>
+            </button>
           </div>
 
           {/* Auth Tabs */}
-          <Tabs value={isLogin ? "login" : "signup"} onValueChange={(value) => setIsLogin(value === "login")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          <div className="tabs">
+            <button
+              className={`tab ${isLogin ? "active" : ""}`}
+              onClick={() => setIsLogin(true)}
+            >
+              Sign In
+            </button>
+            <button
+              className={`tab ${!isLogin ? "active" : ""}`}
+              onClick={() => setIsLogin(false)}
+            >
+              Sign Up
+            </button>
+          </div>
 
-            <TabsContent value="login" className="space-y-4 mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {userType === "customer" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" type="tel" placeholder="Enter your phone number" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="Enter your email" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="shop-name">Shop Name</Label>
-                      <Input id="shop-name" placeholder="Enter your shop name" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="Enter your email" />
-                    </div>
-                  </>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" placeholder="Enter your password" />
-                </div>
-                <Button type="submit" className="w-full">
-                  Sign In
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-4 mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {userType === "customer" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-phone">Phone Number</Label>
-                      <Input id="signup-phone" type="tel" placeholder="Enter your phone number" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" type="email" placeholder="Enter your email" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-shop-name">Shop Name</Label>
-                      <Input id="signup-shop-name" placeholder="Enter your shop name" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" type="email" placeholder="Enter your email" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="product-list">Product List</Label>
-                      <Textarea
-                        id="product-list"
-                        placeholder="Enter your products in format: Product Name, $Price, Category&#10;Example:&#10;Organic Apples, $3.99, Food&#10;Reusable Bottle, $12.99, Eco-Friendly"
-                        className="min-h-20"
-                        value={productList}
-                        onChange={(e) => setProductList(e.target.value)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Format: Product Name, $Price, Category (one per line)
-                      </p>
-                      <Button type="button" variant="outline" size="sm" className="w-full bg-transparent">
-                        <span className="mr-2">📤</span>
-                        Upload CSV
-                      </Button>
-                    </div>
-                  </>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" placeholder="Create a password" />
-                </div>
-                <Button type="submit" className="w-full">
-                  Sign Up
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          {/* Forms */}
+          {isLogin ? (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {userType === "customer" ? (
+                <>
+                  <div className="form-group">
+                    <label className="label" htmlFor="phone">Phone Number</label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      className="input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label" htmlFor="email">Email</label>
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      className="input"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="label" htmlFor="shop-name">Shop Name</label>
+                    <input
+                      id="shop-name"
+                      placeholder="Enter your shop name"
+                      className="input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label" htmlFor="email">Email</label>
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      className="input"
+                    />
+                  </div>
+                </>
+              )}
+              <div className="form-group">
+                <label className="label" htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="input"
+                />
+              </div>
+              <button type="submit" className="btn-primary">
+                Sign In
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {userType === "customer" ? (
+                <>
+                  <div className="form-group">
+                    <label className="label" htmlFor="signup-phone">Phone Number</label>
+                    <input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      className="input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label" htmlFor="signup-email">Email</label>
+                    <input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      className="input"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="label" htmlFor="signup-shop-name">Shop Name</label>
+                    <input
+                      id="signup-shop-name"
+                      placeholder="Enter your shop name"
+                      className="input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label" htmlFor="signup-email">Email</label>
+                    <input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      className="input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label" htmlFor="product-list">Product List</label>
+                    <textarea
+                      id="product-list"
+                      placeholder="Enter your products in format: Product Name, $Price, Category&#10;Example:&#10;Organic Apples, $3.99, Food&#10;Reusable Bottle, $12.99, Eco-Friendly"
+                      style={{ minHeight: '80px', width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', resize: 'vertical' }}
+                      value={productList}
+                      onChange={(e) => setProductList(e.target.value)}
+                    />
+                    <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      Format: Product Name, $Price, Category (one per line)
+                    </p>
+                    <button type="button" className="btn-outline" style={{ width: '100%', marginTop: '8px' }}>
+                      <span style={{ marginRight: '8px' }}>📤</span>
+                      Upload CSV
+                    </button>
+                  </div>
+                </>
+              )}
+              <div className="form-group">
+                <label className="label" htmlFor="signup-password">Password</label>
+                <input
+                  id="signup-password"
+                  type="password"
+                  placeholder="Create a password"
+                  className="input"
+                />
+              </div>
+              <button type="submit" className="btn-primary">
+                Sign Up
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

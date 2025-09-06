@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
+import Image from "next/image"
 
 interface ShopItem {
   id: number
@@ -56,184 +57,254 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [] }: ShopkeeperDash
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="dashboard">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="dashboard-header">
           <div>
-            <h1 className="text-3xl font-bold text-foreground text-balance">Shop Management Dashboard</h1>
-            <p className="text-muted-foreground">Manage your shop items and issue receipts</p>
+            <h1 className="dashboard-title">Shop Management Dashboard</h1>
+            <p className="dashboard-subtitle">Manage your shop items and issue receipts</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 glass rounded-lg px-4 py-2">
-              <span className="text-lg">🏪</span>
-              <span className="font-semibold">ShopKeeper Portal</span>
+          <div className="dashboard-nav">
+            <div className="nav-item">
+              <span style={{ fontSize: '18px' }}>🏪</span>
+              <span>ShopKeeper Portal</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={onLogout}
-              className="glass border-0 hover:bg-destructive/10 hover:text-destructive bg-transparent"
+              className="btn-outline"
+              style={{ padding: '8px 16px', fontSize: '14px' }}
             >
               Logout
-            </Button>
+            </button>
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <Button
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button
             onClick={() => setShowIssueReceipt(!showIssueReceipt)}
-            className="bg-primary hover:bg-primary/90 px-12 py-4 text-xl font-semibold shadow-lg"
-            size="lg"
+            className="btn-primary"
+            style={{ padding: '16px 48px', fontSize: '20px', fontWeight: '600' }}
           >
-            🧾 Issue Receipt
-          </Button>
+            <span style={{ marginRight: '8px' }}>🧾</span>
+            Issue Receipt
+          </button>
         </div>
 
         {/* Issue Receipt Form */}
         {showIssueReceipt && (
-          <Card className="glass border border-emerald-200/30 shadow-sm max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">🧾 Issue New Receipt</CardTitle>
-              <CardDescription>Enter customer details and select items</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="customer">Customer Username or Phone Number</Label>
-                <Input
-                  id="customer"
-                  placeholder="Enter username or phone number"
-                  value={customerIdentifier}
-                  onChange={(e) => setCustomerIdentifier(e.target.value)}
-                  className="bg-background/50"
-                />
+          <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="card-header">
+              <div className="card-title">
+                <span>🧾</span>
+                Issue New Receipt
               </div>
+              <div className="card-description">Enter customer details and select items</div>
+            </div>
+            <div className="card-content">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="form-group">
+                  <label className="label" htmlFor="customer">Customer Username or Phone Number</label>
+                  <input
+                    id="customer"
+                    placeholder="Enter username or phone number"
+                    value={customerIdentifier}
+                    onChange={(e) => setCustomerIdentifier(e.target.value)}
+                    className="input"
+                  />
+                </div>
 
-              <div>
-                <Label>Select Items</Label>
-                {shopItems.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <div className="text-4xl mb-4">🏪</div>
-                    <p className="text-lg font-medium">Shop is empty</p>
-                    <p className="text-sm">Add products to your shop to start issuing receipts</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                    {shopItems.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-                        <div>
-                          <div className="font-medium text-sm">{item.name}</div>
-                          <div className="text-xs text-muted-foreground">${item.price}</div>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {item.category}
-                          </Badge>
+                <div className="form-group">
+                  <label className="label">Select Items</label>
+                  {shopItems.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">🏪</div>
+                      <div className="empty-title">Shop is empty</div>
+                      <div className="empty-description">Add products to your shop to start issuing receipts</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px', marginTop: '8px' }}>
+                      {shopItems.map((item) => (
+                        <div key={item.id} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between', 
+                          padding: '12px', 
+                          borderRadius: '8px', 
+                          backgroundColor: 'rgba(249, 250, 251, 0.5)' 
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: '500', fontSize: '14px' }}>{item.name}</div>
+                            <div style={{ fontSize: '12px', color: '#6b7280' }}>${item.price}</div>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '10px',
+                              fontWeight: '500',
+                              backgroundColor: 'transparent',
+                              color: '#6b7280',
+                              border: '1px solid #d1d5db',
+                              marginTop: '4px'
+                            }}>
+                              {item.category}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                              onClick={() =>
+                                handleItemQuantityChange(item.id.toString(), (selectedItems[item.id.toString()] || 0) - 1)
+                              }
+                              disabled={(selectedItems[item.id.toString()] || 0) <= 0}
+                              className="btn-outline"
+                              style={{ 
+                                padding: '4px 8px', 
+                                fontSize: '12px',
+                                opacity: (selectedItems[item.id.toString()] || 0) <= 0 ? 0.5 : 1
+                              }}
+                            >
+                              -
+                            </button>
+                            <span style={{ width: '32px', textAlign: 'center', fontSize: '14px' }}>
+                              {selectedItems[item.id.toString()] || 0}
+                            </span>
+                            <button
+                              onClick={() =>
+                                handleItemQuantityChange(item.id.toString(), (selectedItems[item.id.toString()] || 0) + 1)
+                              }
+                              className="btn-outline"
+                              style={{ padding: '4px 8px', fontSize: '12px' }}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleItemQuantityChange(item.id.toString(), (selectedItems[item.id.toString()] || 0) - 1)
-                            }
-                            disabled={(selectedItems[item.id.toString()] || 0) <= 0}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center text-sm">{selectedItems[item.id.toString()] || 0}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleItemQuantityChange(item.id.toString(), (selectedItems[item.id.toString()] || 0) + 1)
-                            }
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleIssueReceipt} disabled={!customerIdentifier.trim() || shopItems.length === 0}>
-                  Issue Receipt
-                </Button>
-                <Button variant="outline" onClick={() => setShowIssueReceipt(false)}>
-                  Cancel
-                </Button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={handleIssueReceipt} 
+                    disabled={!customerIdentifier.trim() || shopItems.length === 0}
+                    className="btn-primary"
+                    style={{ 
+                      opacity: (!customerIdentifier.trim() || shopItems.length === 0) ? 0.5 : 1,
+                      cursor: (!customerIdentifier.trim() || shopItems.length === 0) ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    Issue Receipt
+                  </button>
+                  <button 
+                    onClick={() => setShowIssueReceipt(false)}
+                    className="btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">📈 Top Selling Items</CardTitle>
-              <CardDescription>Your best performing products</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div className="cards-grid">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <span>📈</span>
+                Top Selling Items
+              </div>
+              <div className="card-description">Your best performing products</div>
+            </div>
+            <div className="card-content">
               {topSellingItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  📦<p className="mt-4">No items available</p>
-                  <p className="text-sm">Add products to see top selling items</p>
+                <div className="empty-state">
+                  <div className="empty-icon">📦</div>
+                  <div className="empty-title">No items available</div>
+                  <div className="empty-description">Add products to see top selling items</div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {topSellingItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                    <div key={item.id} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between', 
+                      padding: '12px', 
+                      borderRadius: '8px', 
+                      backgroundColor: 'rgba(249, 250, 251, 0.5)' 
+                    }}>
                       <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">Sold: {item.soldCount}</div>
+                        <div style={{ fontWeight: '500', fontSize: '14px' }}>{item.name}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>Sold: {item.soldCount}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium text-sm">${item.price}</div>
-                        <Badge variant="outline" className="text-xs">
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px' }}>${item.price}</div>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          fontWeight: '500',
+                          backgroundColor: 'transparent',
+                          color: '#6b7280',
+                          border: '1px solid #d1d5db'
+                        }}>
                           {item.category}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Previous Receipts */}
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">📅 Previous Receipts</CardTitle>
-              <CardDescription>Recent transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <span>📅</span>
+                Previous Receipts
+              </div>
+              <div className="card-description">Recent transactions</div>
+            </div>
+            <div className="card-content">
               {previousReceipts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  🧾<p className="mt-4">No receipts issued yet</p>
-                  <p className="text-sm">Start issuing receipts to see transaction history</p>
+                <div className="empty-state">
+                  <div className="empty-icon">🧾</div>
+                  <div className="empty-title">No receipts issued yet</div>
+                  <div className="empty-description">Start issuing receipts to see transaction history</div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {previousReceipts.map((receipt) => (
-                    <div key={receipt.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                    <div key={receipt.id} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between', 
+                      padding: '12px', 
+                      borderRadius: '8px', 
+                      backgroundColor: 'rgba(249, 250, 251, 0.5)' 
+                    }}>
                       <div>
-                        <div className="font-medium text-sm">{receipt.customerName}</div>
-                        <div className="text-xs text-muted-foreground">{receipt.date}</div>
+                        <div style={{ fontWeight: '500', fontSize: '14px' }}>{receipt.customerName}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>{receipt.date}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium text-sm">${receipt.amount}</div>
-                        <div className="text-xs text-muted-foreground">{receipt.items} items</div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px' }}>${receipt.amount}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>{receipt.items} items</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <Button variant="outline" className="w-full mt-4 bg-transparent">
+              <button className="btn-outline" style={{ width: '100%', marginTop: '16px' }}>
                 View All Receipts
-              </Button>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -28,133 +28,164 @@ export function CustomerDashboard({ onLogout }: CustomerDashboardProps) {
   const nextMilestone = 200
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="dashboard">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="dashboard-header">
           <div>
-            <h1 className="text-3xl font-bold text-foreground text-balance">Your Eco Journey</h1>
-            <p className="text-muted-foreground">Track your sustainable choices and earn rewards</p>
+            <h1 className="dashboard-title">Your Eco Journey</h1>
+            <p className="dashboard-subtitle">Track your sustainable choices and earn rewards</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 glass rounded-lg px-4 py-2">
+          <div className="dashboard-nav">
+            <div className="nav-item">
               <Image
                 src="/logo.png"
                 alt="EcoTrack Logo"
                 width={24}
                 height={24}
-                className="rounded-full"
+                style={{ borderRadius: '50%' }}
               />
-              <span className="font-semibold">EcoTrack</span>
+              <span>EcoTrack</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={onLogout}
-              className="glass border-0 hover:bg-destructive/10 hover:text-destructive bg-transparent"
+              className="btn-outline"
+              style={{ padding: '8px 16px', fontSize: '14px' }}
             >
               Logout
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Points</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPoints}</div>
-              <p className="text-xs text-muted-foreground">Next milestone: {nextMilestone}</p>
-            </CardContent>
-          </Card>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-title">Total Points</div>
+            <div className="stat-value">{totalPoints}</div>
+            <div className="stat-description">Next milestone: {nextMilestone}</div>
+          </div>
 
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Challenges Completed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{challenges.filter(c => c.earned).length}/{challenges.length}</div>
-              <p className="text-xs text-muted-foreground">Keep going!</p>
-            </CardContent>
-          </Card>
+          <div className="stat-card">
+            <div className="stat-title">Challenges Completed</div>
+            <div className="stat-value">{challenges.filter(c => c.earned).length}/{challenges.length}</div>
+            <div className="stat-description">Keep going!</div>
+          </div>
 
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">This Week</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">Eco-friendly actions</p>
-            </CardContent>
-          </Card>
+          <div className="stat-card">
+            <div className="stat-title">This Week</div>
+            <div className="stat-value">3</div>
+            <div className="stat-description">Eco-friendly actions</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="cards-grid">
           {/* Challenges */}
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">🏆 Challenges</CardTitle>
-              <CardDescription>Complete challenges to earn more points</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <span>🏆</span>
+                Challenges
+              </div>
+              <div className="card-description">Complete challenges to earn more points</div>
+            </div>
+            <div className="card-content">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {challenges.map((challenge) => (
-                  <div key={challenge.name} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{challenge.icon}</span>
-                      <span className="font-medium text-sm">{challenge.name}</span>
+                  <div key={challenge.name} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'rgba(249, 250, 251, 0.5)' 
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '18px' }}>{challenge.icon}</span>
+                      <span style={{ fontWeight: '500', fontSize: '14px' }}>{challenge.name}</span>
                     </div>
-                    <Badge variant={challenge.earned ? "default" : "outline"}>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      backgroundColor: challenge.earned ? '#22c55e' : 'transparent',
+                      color: challenge.earned ? 'white' : '#6b7280',
+                      border: challenge.earned ? 'none' : '1px solid #d1d5db'
+                    }}>
                       {challenge.earned ? "Completed" : "In Progress"}
-                    </Badge>
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Recent Activities */}
-          <Card className="glass border border-emerald-200/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">📈 Recent Activities</CardTitle>
-              <CardDescription>Your latest eco-friendly actions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <span>📈</span>
+                Recent Activities
+              </div>
+              <div className="card-description">Your latest eco-friendly actions</div>
+            </div>
+            <div className="card-content">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'rgba(249, 250, 251, 0.5)' 
+                  }}>
                     <div>
-                      <div className="font-medium text-sm">{activity.action}</div>
-                      <div className="text-xs text-muted-foreground">{activity.time}</div>
+                      <div style={{ fontWeight: '500', fontSize: '14px' }}>{activity.action}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{activity.time}</div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium text-sm text-emerald-600">+{activity.points} pts</div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: '500', fontSize: '14px', color: '#22c55e' }}>+{activity.points} pts</div>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Progress Section */}
-        <Card className="glass border border-emerald-200/30 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">🎯 Progress to Next Milestone</CardTitle>
-            <CardDescription>You're {nextMilestone - totalPoints} points away from your next reward</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">
+              <span>🎯</span>
+              Progress to Next Milestone
+            </div>
+            <div className="card-description">You're {nextMilestone - totalPoints} points away from your next reward</div>
+          </div>
+          <div className="card-content">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span>{totalPoints} points</span>
                 <span>{nextMilestone} points</span>
               </div>
-              <Progress value={(totalPoints / nextMilestone) * 100} className="h-2" />
+              <div style={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${(totalPoints / nextMilestone) * 100}%`,
+                  height: '100%',
+                  backgroundColor: '#22c55e',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
