@@ -148,3 +148,11 @@ func (s *UserService) ValidateCustomer(identifier string) (*models.User, error) 
 	
 	return &user, nil
 }
+
+func (s *UserService) UpdateUserPoints(userID int, points int) error {
+	_, err := s.db.DB.Exec(`
+		UPDATE users SET points = ?, updated_at = datetime('now') 
+		WHERE id = ?`,
+		points, userID)
+	return err
+}

@@ -118,21 +118,21 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
     <div className="dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <Image
             src="/logo.png"
             alt="EcoTrack Logo"
-            width={32}
-            height={32}
-            style={{ borderRadius: '50%' }}
+            width={48}
+            height={48}
+            style={{ borderRadius: '50%', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}
           />
-          <span style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937' }}>EcoTrack</span>
+          <span style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937' }}>EcoTrack</span>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={fetchUserData} className="btn-outline">
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <button onClick={fetchUserData} className="btn-outline" style={{ fontSize: '16px', padding: '12px 20px' }}>
             🔄 Refresh
           </button>
-          <button onClick={onLogout} className="btn-outline">
+          <button onClick={onLogout} className="btn-outline" style={{ fontSize: '16px', padding: '12px 20px' }}>
             🚪 Logout
           </button>
         </div>

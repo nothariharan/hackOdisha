@@ -284,6 +284,24 @@ export class ApiService {
     return response.json();
   }
 
+  // Update user points (admin function)
+  static async updateUserPoints(userId: number, points: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/points`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ points }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error);
+    }
+
+    return response.json();
+  }
+
   // Health check
   static async healthCheck(): Promise<{ status: string; database: string }> {
     const response = await fetch('http://localhost:8000/health');

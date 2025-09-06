@@ -232,14 +232,8 @@ func (s *ReceiptService) DeleteReceipt(receiptID int) error {
 		return err
 	}
 
-	// Subtract points from user
-	_, err = s.db.DB.Exec(`
-		UPDATE users SET points = points - ?, updated_at = datetime('now') 
-		WHERE id = ?`,
-		pointsEarned, userID)
-	if err != nil {
-		return err
-	}
+	// Note: We don't subtract points when deleting receipts to prevent negative points
+	// Points remain with the customer as a reward for their past eco-friendly purchases
 
 	return nil
 }

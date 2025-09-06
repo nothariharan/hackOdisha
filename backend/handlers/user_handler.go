@@ -5,6 +5,7 @@ import (
 "ecotracker-backend/services"
 "encoding/json"
 "net/http"
+"strconv"
 "strings"
 )
 
@@ -105,4 +106,42 @@ func (h *UserHandler) ValidateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) UpdateUserPoints(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract user ID from URL path
+	path := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	path = strings.TrimSuffix(path, "/points")
+	if path == "" {
+		http.Error(w, "User ID required", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := strconv.Atoi(path)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Points int `json:"points"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	err = h.userService.UpdateUserPoints(userID, req.Points)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Points updated successfully"})
 }

@@ -68,6 +68,9 @@ userHandler.Login(w, r)
 case path == "/api/users/validate" && method == "POST":
 userHandler.ValidateCustomer(w, r)
 
+case strings.HasPrefix(path, "/api/users/") && method == "PUT" && strings.Contains(path, "/points"):
+userHandler.UpdateUserPoints(w, r)
+
 case strings.HasPrefix(path, "/api/users/") && method == "GET":
 // Check if it's receipts or challenges
 if strings.Contains(path, "/receipts") {
