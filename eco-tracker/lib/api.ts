@@ -171,9 +171,54 @@ export class ApiService {
     return response.json();
   }
 
+  // Validate customer by email or phone
+  static async validateCustomer(identifier: string): Promise<User | null> {
+    try {
+      console.log('API call to validate customer:', identifier)
+      const response = await fetch(`${API_BASE_URL}/users/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier }),
+      });
+
+      console.log('Response status:', response.status)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.log('Error response:', errorText)
+        return null;
+      }
+
+      const result = await response.json();
+      console.log('API validation result:', result)
+      return result;
+    } catch (error) {
+      console.error('API validation error:', error)
+      return null;
+    }
+  }
+
   // Get user receipts
   static async getUserReceipts(userId: number): Promise<Receipt[]> {
+    console.log('API: Fetching receipts for user:', userId)
     const response = await fetch(`${API_BASE_URL}/users/${userId}/receipts`);
+
+    console.log('API: getUserReceipts response status:', response.status)
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('API: getUserReceipts error:', error)
+      throw new Error(error);
+    }
+
+    const receipts = await response.json();
+    console.log('API: getUserReceipts result:', receipts)
+    return receipts;
+  }
+
+  // Get user challenges
+  static async getUserChallenges(userId: number): Promise<Challenge[]> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/challenges`);
 
     if (!response.ok) {
       const error = await response.text();
@@ -183,9 +228,53 @@ export class ApiService {
     return response.json();
   }
 
-  // Get user challenges
-  static async getUserChallenges(userId: number): Promise<Challenge[]> {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/challenges`);
+  // Get shop receipts
+  static async getShopReceipts(shopId: number): Promise<Receipt[]> {
+    const response = await fetch(`${API_BASE_URL}/shops/${shopId}/receipts`);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error);
+    }
+
+    return response.json();
+  }
+
+  // Create receipt
+  static async createReceipt(receiptData: any): Promise<Receipt> {
+    const response = await fetch(`${API_BASE_URL}/receipts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(receiptData),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error);
+    }
+
+    return response.json();
+  }
+
+  // Delete receipt
+  static async deleteReceipt(receiptId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/receipts/${receiptId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error);
+    }
+
+    return response.json();
+  }
+
+  // Get all receipts (admin function)
+  static async getAllReceipts(): Promise<Receipt[]> {
+    const response = await fetch(`${API_BASE_URL}/admin/receipts`);
 
     if (!response.ok) {
       const error = await response.text();

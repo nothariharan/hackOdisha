@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { type User, type ShopItem, ApiService } from "@/lib/api"
+import { ShopItem, User, ApiService, Receipt } from "../lib/api"
 
 interface ShopkeeperDashboardProps {
   onLogout: () => void
@@ -25,14 +25,27 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
   const [newItem, setNewItem] = useState({ name: "", price: "", category: "" })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [shopReceipts, setShopReceipts] = useState<Receipt[]>([])
+  const [totalPointsAwarded, setTotalPointsAwarded] = useState(0)
+  const [validatedCustomer, setValidatedCustomer] = useState<any>(null)
+  const [validationTimeout, setValidationTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const shopName = user?.name || "Your Shop"
 
   useEffect(() => {
     if (user?.id) {
       fetchShopItems()
+      fetchShopReceipts()
     }
   }, [user?.id])
+
+  useEffect(() => {
+    return () => {
+      if (validationTimeout) {
+        clearTimeout(validationTimeout)
+      }
+    }
+  }, [validationTimeout])
 
   const fetchShopItems = async () => {
     if (!user?.id) return
@@ -43,6 +56,19 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
     } catch (error) {
       console.error('Error fetching shop items:', error)
       setCurrentShopItems([])
+    }
+  }
+
+  const fetchShopReceipts = async () => {
+    if (!user?.id) return
+    try {
+      const receipts = await ApiService.getShopReceipts(user.id)
+      setShopReceipts(receipts || [])
+      setTotalPointsAwarded(receipts?.reduce((sum, receipt) => sum + receipt.points_earned, 0) || 0)
+    } catch (error) {
+      console.error('Error fetching shop receipts:', error)
+      setShopReceipts([])
+      setTotalPointsAwarded(0)
     }
   }
 
@@ -100,6 +126,16 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
       return
     }
     
+    // Use already validated customer or validate if not done yet
+    let customer = validatedCustomer
+    if (!customer) {
+      customer = await ApiService.validateCustomer(customerIdentifier.trim())
+      if (!customer) {
+        setError("Customer not found. Please enter a valid email or phone number of a registered customer.")
+        return
+      }
+    }
+    
     if (!currentShopItems || currentShopItems.length === 0) {
       setError("No items available in your shop. Please add items first.")
       return
@@ -111,39 +147,64 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
         const item = currentShopItems.find(i => i.id === parseInt(itemId))
         return item ? { ...item, quantity } : null
       })
-      .filter(Boolean)
+      .filter((item): item is ShopItem & { quantity: number } => item !== null)
 
     if (purchasedItems.length === 0) {
       setError("Please select at least one item to issue a receipt")
       return
     }
 
-    const total = calculateTotal()
-    const pointsEarned = Math.floor(total * 2) // 2 points per dollar
+    const subtotal = calculateTotal()
+    
+    // Calculate eco discount based on customer's points
+    // For every 100 points, discount = points / 50
+    const customerEcoScore = customer.points || 0
+    const discountPercentage = customerEcoScore >= 100 ? Math.min(customerEcoScore / 50, 50) : 0 // Cap at 50% discount
+    const discountAmount = (subtotal * discountPercentage) / 100
+    const total = subtotal - discountAmount
+    
+    const pointsEarned = Math.floor(total * 2) // 2 points per dollar on final amount
 
     try {
       // Create receipt in database
+      const receiptItems = purchasedItems.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        category: item.category,
+        is_eco_friendly: item.is_eco_friendly || false
+      }))
+
       const receiptData = {
-        customer_identifier: customerIdentifier,
+        user_id: customer.id,
         shop_id: user?.id,
-        items: purchasedItems,
-        total_amount: total,
-        points_earned: pointsEarned
+        items: receiptItems
       }
 
-      // For now, we'll show the receipt popup
-      // In a real app, you'd save this to the database
+      // Save receipt to database
+      const savedReceipt = await ApiService.createReceipt(receiptData)
+      
+      // Show receipt popup with saved data
       setReceiptData({
         customerIdentifier,
+        customerName: customer.name,
+        customerEcoScore: customerEcoScore,
         items: purchasedItems,
+        subtotal,
+        discountPercentage,
+        discountAmount,
         total,
         pointsEarned,
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString(),
+        receiptId: savedReceipt.id
       })
 
       setShowReceipt(true)
       setSelectedItems({})
       setCustomerIdentifier("")
+      
+      // Refresh receipt count
+      await fetchShopReceipts()
       
       // Show success message
       setError("")
@@ -157,6 +218,40 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
   const closeReceipt = () => {
     setShowReceipt(false)
     setReceiptData(null)
+  }
+
+  const validateCustomerIdentifier = async (identifier: string) => {
+    if (identifier.trim().length > 0) {
+      try {
+        console.log('Validating customer:', identifier.trim())
+        const customer = await ApiService.validateCustomer(identifier.trim())
+        console.log('Validation result:', customer)
+        setValidatedCustomer(customer)
+        setError("")
+      } catch (error) {
+        console.error('Validation error:', error)
+        setValidatedCustomer(null)
+      }
+    } else {
+      setValidatedCustomer(null)
+    }
+  }
+
+  const handleCustomerIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setCustomerIdentifier(value)
+    
+    // Clear previous timeout
+    if (validationTimeout) {
+      clearTimeout(validationTimeout)
+    }
+    
+    // Debounce the validation
+    const timeoutId = setTimeout(() => {
+      validateCustomerIdentifier(value)
+    }, 500)
+    
+    setValidationTimeout(timeoutId)
   }
 
   return (
@@ -218,12 +313,12 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
           </div>
           <div className="stat-card">
             <div className="stat-title">Receipts Issued</div>
-            <div className="stat-value">0</div>
+            <div className="stat-value">{shopReceipts?.length || 0}</div>
             <div className="stat-description">Eco-friendly receipts sent</div>
           </div>
           <div className="stat-card">
             <div className="stat-title">Points Awarded</div>
-            <div className="stat-value">0</div>
+            <div className="stat-value">{totalPointsAwarded || 0}</div>
             <div className="stat-description">Total points given to customers</div>
           </div>
         </div>
@@ -243,7 +338,6 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                 <button 
                   onClick={() => setShowAddItemForm(!showAddItemForm)}
                   className="btn-outline"
-                  style={{ padding: '8px 16px', fontSize: '14px' }}
                 >
                   {showAddItemForm ? 'Cancel' : '+ Add Item'}
                 </button>
@@ -388,8 +482,26 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                     placeholder="Enter customer email or phone"
                     className="input"
                     value={customerIdentifier}
-                    onChange={(e) => setCustomerIdentifier(e.target.value)}
+                    onChange={handleCustomerIdentifierChange}
                   />
+                  
+                  {validatedCustomer && (
+                    <div style={{ 
+                      marginTop: '8px', 
+                      padding: '8px', 
+                      backgroundColor: '#f0fdf4', 
+                      border: '1px solid #22c55e',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}>
+                      ✅ Customer: <strong>{validatedCustomer.name}</strong> | Eco Score: <strong>{validatedCustomer.points}</strong> points
+                      {validatedCustomer.points >= 100 && (
+                        <div style={{ color: '#16a34a', fontWeight: '600', marginTop: '4px' }}>
+                          🌱 Eligible for {Math.min(validatedCustomer.points / 50, 50).toFixed(1)}% eco discount!
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {Object.keys(selectedItems).length > 0 && (
@@ -418,13 +530,45 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                     <div style={{ 
                       borderTop: '1px solid #0ea5e9', 
                       paddingTop: '8px', 
-                      marginTop: '8px',
-                      display: 'flex', 
-                      justifyContent: 'space-between',
-                      fontWeight: '600'
+                      marginTop: '8px'
                     }}>
-                      <span>Total:</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        marginBottom: '4px'
+                      }}>
+                        <span>Subtotal:</span>
+                        <span>${calculateTotal().toFixed(2)}</span>
+                      </div>
+                      
+                      {validatedCustomer && validatedCustomer.points >= 100 && (
+                        <>
+                          <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            marginBottom: '4px',
+                            color: '#16a34a'
+                          }}>
+                            <span>Eco Discount ({Math.min(validatedCustomer.points / 50, 50).toFixed(1)}%):</span>
+                            <span>-${((calculateTotal() * Math.min(validatedCustomer.points / 50, 50)) / 100).toFixed(2)}</span>
+                          </div>
+                        </>
+                      )}
+                      
+                      <div style={{ 
+                        borderTop: '1px solid #0ea5e9', 
+                        paddingTop: '4px', 
+                        marginTop: '4px',
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        fontWeight: '600'
+                      }}>
+                        <span>Final Total:</span>
+                        <span>${(validatedCustomer && validatedCustomer.points >= 100 
+                          ? calculateTotal() - ((calculateTotal() * Math.min(validatedCustomer.points / 50, 50)) / 100)
+                          : calculateTotal()
+                        ).toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -454,7 +598,10 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
             </div>
             <div className="content">
               <div style={{ marginBottom: '16px' }}>
-                <strong>Customer:</strong> {receiptData.customerIdentifier}
+                <strong>Customer:</strong> {receiptData.customerName || receiptData.customerIdentifier}
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <strong>Eco Score:</strong> {receiptData.customerEcoScore} points
               </div>
               <div style={{ marginBottom: '16px' }}>
                 <strong>Date:</strong> {receiptData.timestamp}
@@ -467,16 +614,51 @@ export function ShopkeeperDashboard({ onLogout, shopItems = [], user }: Shopkeep
                   </div>
                 ))}
               </div>
-              <div style={{ 
-                borderTop: '2px solid #e5e7eb', 
-                paddingTop: '12px',
-                display: 'flex', 
-                justifyContent: 'space-between',
-                fontWeight: '600',
-                fontSize: '18px'
-              }}>
-                <span>Total:</span>
-                <span>${receiptData.total.toFixed(2)}</span>
+              
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '8px'
+                }}>
+                  <span>Subtotal:</span>
+                  <span>${receiptData.subtotal.toFixed(2)}</span>
+                </div>
+                
+                {receiptData.discountPercentage > 0 && (
+                  <>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
+                      color: '#16a34a'
+                    }}>
+                      <span>Eco Discount ({receiptData.discountPercentage.toFixed(1)}%):</span>
+                      <span>-${receiptData.discountAmount.toFixed(2)}</span>
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: '#6b7280', 
+                      marginBottom: '12px',
+                      fontStyle: 'italic',
+                      textAlign: 'center'
+                    }}>
+                      🌱 Eco discount applied! You saved ${receiptData.discountAmount.toFixed(2)} with {receiptData.customerEcoScore} eco points!
+                    </div>
+                  </>
+                )}
+                
+                <div style={{ 
+                  borderTop: '2px solid #e5e7eb', 
+                  paddingTop: '12px',
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  fontWeight: '600',
+                  fontSize: '18px'
+                }}>
+                  <span>Final Total:</span>
+                  <span>${receiptData.total.toFixed(2)}</span>
+                </div>
               </div>
               <div style={{ 
                 backgroundColor: '#f0fdf4',

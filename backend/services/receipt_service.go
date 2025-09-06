@@ -54,6 +54,15 @@ return nil, err
 }
 }
 
+// Update customer's points
+_, err = s.db.DB.Exec(`
+UPDATE users SET points = points + ?, updated_at = datetime('now') 
+WHERE id = ?`,
+pointsEarned, receiptCreate.UserID)
+if err != nil {
+return nil, err
+}
+
 receipt := &models.Receipt{
 ID:           int(receiptID),
 ShopID:       receiptCreate.ShopID,
@@ -198,4 +207,39 @@ challenges[3].Progress = len(uniqueShops)
 challenges[3].Earned = len(uniqueShops) >= challenges[3].Target
 
 return challenges, nil
+}
+
+func (s *ReceiptService) DeleteReceipt(receiptID int) error {
+	// First, get the receipt to know how many points to subtract
+	var userID int
+	var pointsEarned int
+	err := s.db.DB.QueryRow(`
+		SELECT user_id, points_earned FROM receipts WHERE id = ?`,
+		receiptID).Scan(&userID, &pointsEarned)
+	if err != nil {
+		return errors.New("receipt not found")
+	}
+
+	// Delete receipt items first (foreign key constraint)
+	_, err = s.db.DB.Exec(`DELETE FROM receipt_items WHERE receipt_id = ?`, receiptID)
+	if err != nil {
+		return err
+	}
+
+	// Delete the receipt
+	_, err = s.db.DB.Exec(`DELETE FROM receipts WHERE id = ?`, receiptID)
+	if err != nil {
+		return err
+	}
+
+	// Subtract points from user
+	_, err = s.db.DB.Exec(`
+		UPDATE users SET points = points - ?, updated_at = datetime('now') 
+		WHERE id = ?`,
+		pointsEarned, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

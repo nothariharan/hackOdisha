@@ -65,6 +65,9 @@ userHandler.Register(w, r)
 case path == "/api/users/login" && method == "POST":
 userHandler.Login(w, r)
 
+case path == "/api/users/validate" && method == "POST":
+userHandler.ValidateCustomer(w, r)
+
 case strings.HasPrefix(path, "/api/users/") && method == "GET":
 // Check if it's receipts or challenges
 if strings.Contains(path, "/receipts") {
@@ -85,6 +88,8 @@ case strings.HasPrefix(path, "/api/shops/") && method == "GET":
 // Check if it's items
 if strings.Contains(path, "/items") {
 shopHandler.GetItems(w, r)
+} else if strings.Contains(path, "/receipts") {
+receiptHandler.GetShopReceipts(w, r)
 } else {
 shopHandler.GetShop(w, r)
 }
@@ -94,6 +99,9 @@ shopHandler.AddItem(w, r)
 
 case path == "/api/receipts" && method == "POST":
 receiptHandler.CreateReceipt(w, r)
+
+case strings.HasPrefix(path, "/api/receipts/") && method == "DELETE":
+receiptHandler.DeleteReceipt(w, r)
 
 default:
 http.Error(w, "Not Found", http.StatusNotFound)

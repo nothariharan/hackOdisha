@@ -84,6 +84,19 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
     setNewReceipt(null)
   }
 
+  const handleDeleteReceipt = async (receiptId: number) => {
+    if (confirm('Are you sure you want to delete this receipt? This will also subtract the earned points.')) {
+      try {
+        await ApiService.deleteReceipt(receiptId)
+        // Refresh data to show updated state
+        await fetchUserData()
+      } catch (error) {
+        console.error('Error deleting receipt:', error)
+        alert('Failed to delete receipt. Please try again.')
+      }
+    }
+  }
+
   const getProgressPercentage = (progress: number, target: number) => {
     return Math.min((progress / target) * 100, 100)
   }
@@ -115,9 +128,14 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           />
           <span style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937' }}>EcoTrack</span>
         </div>
-        <button onClick={onLogout} className="btn-outline">
-          Logout
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={fetchUserData} className="btn-outline">
+            🔄 Refresh
+          </button>
+          <button onClick={onLogout} className="btn-outline">
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -125,7 +143,7 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
         {/* Welcome Section */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 className="dashboard-title" style={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -133,14 +151,6 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
           }}>
             Your Eco Journey
           </h1>
-          <div style={{
-            height: '4px',
-            background: 'linear-gradient(90deg, #10b981, #059669, #047857, #065f46)',
-            borderRadius: '2px',
-            margin: '0 auto',
-            width: '200px',
-            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
-          }}></div>
           <p className="dashboard-subtitle">Track your sustainable choices and earn rewards</p>
         </div>
 
@@ -305,9 +315,30 @@ export function CustomerDashboard({ onLogout, user }: CustomerDashboardProps) {
                       <div style={{ fontSize: '18px', fontWeight: '600', color: '#059669', marginBottom: '4px' }}>
                         ${purchase.total_amount.toFixed(2)}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
                         +{purchase.points_earned} points earned
                       </div>
+                      <button 
+                        onClick={() => handleDeleteReceipt(purchase.id)}
+                        style={{
+                          backgroundColor: '#fee2e2',
+                          color: '#dc2626',
+                          border: '1px solid #fecaca',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          width: '100%'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#fecaca'
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = '#fee2e2'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
                     </div>
                   ))}
                 </div>

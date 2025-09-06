@@ -82,3 +82,27 @@ return
 w.Header().Set("Content-Type", "application/json")
 json.NewEncoder(w).Encode(user)
 }
+
+func (h *UserHandler) ValidateCustomer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.userService.ValidateCustomer(req.Identifier)
+	if err != nil {
+		http.Error(w, "Customer not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}

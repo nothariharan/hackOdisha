@@ -130,3 +130,21 @@ return nil, err
 // Return updated user
 return s.GetUser(id)
 }
+
+func (s *UserService) ValidateCustomer(identifier string) (*models.User, error) {
+	var user models.User
+	
+	// Try to find user by email first, then by phone
+	err := s.db.DB.QueryRow(`
+		SELECT id, email, name, phone, points, created_at, updated_at 
+		FROM users WHERE email = ? OR phone = ?`,
+		identifier, identifier).Scan(
+		&user.ID, &user.Email, &user.Name, &user.Phone, 
+		&user.Points, &user.CreatedAt, &user.UpdatedAt)
+	
+	if err != nil {
+		return nil, errors.New("customer not found")
+	}
+	
+	return &user, nil
+}
