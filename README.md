@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Our website is deployed using askash network right now at pl8j5ofc0hat1c5m7okv4h6is8.ingress.europlots-sandbox.com ( might now fetch details if our backend isnt running)
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
